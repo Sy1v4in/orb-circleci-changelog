@@ -1,0 +1,11 @@
+version: 2.1
+
+description: >
+  Create and notify a changelog in a slack channel
+
+# This information will be displayed in the orb registry and is not mandatory.
+display:
+  source_url: "https://github.com/Sy1v4in/orb-circleci-changlog"
+
+orbs:
+  slack: circleci/slack@4.12.5
