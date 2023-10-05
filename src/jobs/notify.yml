@@ -1,0 +1,53 @@
+parameters:
+  github_token:
+    type: string
+    description: Github token to read pull requests associated with
+      a tag or a commit
+  github_repo:
+    type: string
+    description: Github project for which the pull requests are expected
+  tag:
+    type: string
+    default: ''
+  sha:
+    type: string
+    default: ''
+  slack_channel:
+    type: string
+    description: Slack channel where the changelog is notified
+  debug:
+    type: boolean
+    default: false
+docker:
+  - image: fraisse/github-changelog:v1.0.3
+steps:
+  - run:
+      name: Generate changelog
+      command: |
+        export GH_TOKEN=<<parameters.github_token>>
+        cd /usr/src/app
+        if [ -n "<<parameters.tag>>" ]; then
+          bun index.ts tag <<parameters.tag>> <<parameters.github_repo>> > report.txt
+        else
+          bun index.ts sha <<parameters.sha>> <<parameters.github_repo>> > report.txt
+        fi
+        SLACK_MESSAGE=$(cat report.txt)
+        echo $SLACK_MESSAGE
+        echo "export SLACK_MESSAGE='${SLACK_MESSAGE}'" >> $BASH_ENV
+  - slack/notify:
+      debug: <<parameters.debug>>
+      event: pass
+      channel: <<parameters.slack_channel>>
+      custom: |
+        {
+          "blocks": [
+              {
+                  "type": "section",
+                  "text": {
+                      "type": "mrkdwn",
+                      "text": "${SLACK_MESSAGE}"
+                  }
+              }
+          ],
+          "text": "Changelog"
+        }
